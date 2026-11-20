@@ -1,0 +1,15 @@
+{
+  "name": "Exchange service",
+  "image": "mcr.microsoft.com/devcontainers/python:3.14",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "forwardPorts": [8080, 8082, 6381],
+  "portsAttributes": {
+    "8080": { "label": "Exchange API" },
+    "8082": { "label": "Provider mock" },
+    "6381": { "label": "Redis" }
+  },
+  "postCreateCommand": "make bootstrap",
+  "remoteUser": "vscode"
+}

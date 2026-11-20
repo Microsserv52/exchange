@@ -1,0 +1,69 @@
+name: exchange
+
+services:
+  exchange:
+    image: ${EXCHANGE_IMAGE:-microsserv52-exchange:local}
+    build:
+      context: .
+    ports:
+      - "${EXCHANGE_PORT:-8080}:8080"
+    environment:
+      EXCHANGE_PROVIDER_URL: ${EXCHANGE_PROVIDER_URL:-http://provider:8080}
+      EXCHANGE_PROVIDER_API_KEY: ${EXCHANGE_PROVIDER_API_KEY:-}
+      EXCHANGE_PROVIDER_REQUIRES_API_KEY: ${EXCHANGE_PROVIDER_REQUIRES_API_KEY:-false}
+      EXCHANGE_PROVIDER_VERSION: ${EXCHANGE_PROVIDER_VERSION:-v1}
+      EXCHANGE_PROVIDER_TIMEOUT_SECONDS: ${EXCHANGE_PROVIDER_TIMEOUT_SECONDS:-2}
+      EXCHANGE_PROVIDER_RETRIES: ${EXCHANGE_PROVIDER_RETRIES:-1}
+      EXCHANGE_PROVIDER_MAX_CONCURRENCY: ${EXCHANGE_PROVIDER_MAX_CONCURRENCY:-20}
+      EXCHANGE_PROVIDER_SPREAD_BPS: ${EXCHANGE_PROVIDER_SPREAD_BPS:-0}
+      CACHE_REDIS_URL: redis://redis:6379/0
+      CACHE_ENABLED: ${CACHE_ENABLED:-false}
+      CACHE_TTL_SECONDS: ${CACHE_TTL_SECONDS:-60}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-development-use-a-long-random-secret}
+      JWT_ISSUER: ${JWT_ISSUER:-}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    depends_on:
+      provider:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4.12-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${EXCHANGE_REDIS_PORT:-6381}:6379"
+    volumes:
+      - exchange-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  provider:
+    build:
+      context: ./mocks/exchange-provider
+    ports:
+      - "${EXCHANGE_PROVIDER_PORT:-8082}:8080"
+    environment:
+      PORT: "8080"
+      MOCK_MODE: ${MOCK_MODE:-ok}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  exchange-redis-data:
