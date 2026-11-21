@@ -1,5 +1,7 @@
 # Exchange
 
+![Tech Stack](https://skillicons.dev/icons?i=python,fastapi,redis,aws,docker,kubernetes,grafana,prometheus)
+
 Currency conversion microservice for the [Microsserv52 platform](https://github.com/Microsserv52/platform).
 Exchange validates ISO 4217 currencies, calls a configurable third-party
 provider through an adapter, optionally caches rates in Redis and returns the
